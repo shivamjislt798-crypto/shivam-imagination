@@ -138,7 +138,7 @@ const ImageGenerator = () => {
 
         {generatedImage && (
           <div className="space-y-2">
-            <div className="relative rounded-xl overflow-hidden border border-border/50 shadow-glow-violet animate-float">
+            <div className="relative rounded-xl overflow-hidden border border-border/50 shadow-glow-violet">
               <img 
                 src={generatedImage} 
                 alt="Generated" 
