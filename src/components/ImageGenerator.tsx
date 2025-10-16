@@ -6,8 +6,58 @@ import GlassCard from './GlassCard';
 import { Textarea } from './ui/textarea';
 import { Button } from './ui/button';
 
+const ASPECT_MAP = {
+  "1:1": { w: 1024, h: 1024, label: "Square" },
+  "9:16": { w: 768, h: 1366, label: "Portrait" },
+  "16:9": { w: 1366, h: 768, label: "Landscape" },
+  "4:3": { w: 1200, h: 900, label: "Classic" },
+  "21:9": { w: 1920, h: 824, label: "Ultra Wide" },
+};
+
+
+const processImageToAspect = (base64DataUrl: string, targetWidth: number, targetHeight: number): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const srcW = img.naturalWidth;
+        const srcH = img.naturalHeight;
+        const srcAspect = srcW / srcH;
+        const targetAspect = targetWidth / targetHeight;
+
+        let sx = 0, sy = 0, sWidth = srcW, sHeight = srcH;
+        if (srcAspect > targetAspect) {
+          sWidth = Math.round(srcH * targetAspect);
+          sx = Math.round((srcW - sWidth) / 2);
+        } else if (srcAspect < targetAspect) {
+          sHeight = Math.round(srcW / targetAspect);
+          sy = Math.round((srcH - sHeight) / 2);
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("Failed to get canvas context");
+        
+        ctx.clearRect(0, 0, targetWidth, targetHeight);
+        ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, targetWidth, targetHeight);
+        
+        const outDataUrl = canvas.toDataURL("image/png");
+        resolve(outDataUrl);
+      } catch (e) {
+        reject(e);
+      }
+    };
+    img.onerror = () => reject(new Error("Failed to load image for processing"));
+    img.src = base64DataUrl;
+  });
+};
+
 const ImageGenerator = () => {
   const [prompt, setPrompt] = useState('');
+  const [aspect, setAspect] = useState<keyof typeof ASPECT_MAP>("1:1");
   const [isLoading, setIsLoading] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const { toast } = useToast();
@@ -44,8 +94,8 @@ const ImageGenerator = () => {
   const handleGenerate = async () => {
     if (!prompt.trim()) {
       toast({
-        title: 'Empty prompt',
-        description: 'Please describe your imagination first',
+        title: 'Error',
+        description: 'Please enter a prompt',
         variant: 'destructive',
       });
       return;
@@ -56,56 +106,50 @@ const ImageGenerator = () => {
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      
       if (!user) {
         toast({
-          title: "Authentication required",
-          description: "Please log in to generate images.",
-          variant: "destructive",
+          title: 'Error',
+          description: 'Please sign in to generate images',
+          variant: 'destructive',
         });
-        setIsLoading(false);
         return;
       }
 
       const { data, error } = await supabase.functions.invoke('generate-image', {
-        body: { prompt },
+        body: { prompt, aspect }
       });
 
-      if (error) {
-        throw error;
-      }
-
-      if (data?.error) {
-        throw new Error(data.error);
-      }
+      if (error) throw error;
 
       if (data?.imageUrl) {
-        setGeneratedImage(data.imageUrl);
+        const targetWidth = ASPECT_MAP[aspect].w;
+        const targetHeight = ASPECT_MAP[aspect].h;
         
-        // Save to database with user_id
-        const { error: saveError } = await (supabase as any)
-          .from('generations')
-          .insert({
-            prompt,
-            image_url: data.imageUrl,
-            user_id: user.id,
-            type: 'image'
-          });
+        const processedImage = await processImageToAspect(data.imageUrl, targetWidth, targetHeight);
+        setGeneratedImage(processedImage);
 
-        if (saveError) {
-          console.error('Failed to save generation:', saveError);
-        }
+        // @ts-ignore - Supabase types need regeneration
+        await supabase.from('generations').insert([{
+          user_id: user.id,
+          prompt,
+          image_url: processedImage,
+          type: 'image'
+        }] as any);
 
         toast({
-          title: 'Image generated!',
-          description: 'Your imagination has been brought to life',
+          title: 'Success',
+          description: 'Image generated successfully!',
           variant: 'success',
         });
+      } else {
+        throw new Error('No image URL received');
       }
     } catch (error: any) {
       console.error('Generation error:', error);
       toast({
-        title: 'Generation failed',
-        description: error.message || 'Failed to generate image. Please try again.',
+        title: 'Error',
+        description: error.message || 'Failed to generate image',
         variant: 'destructive',
       });
     } finally {
@@ -122,6 +166,21 @@ const ImageGenerator = () => {
       </div>
 
       <div className="space-y-4 flex-1 flex flex-col">
+        <div className="flex flex-wrap gap-2">
+          {(Object.keys(ASPECT_MAP) as Array<keyof typeof ASPECT_MAP>).map((key) => (
+            <Button
+              key={key}
+              onClick={() => setAspect(key)}
+              variant={aspect === key ? "default" : "outline"}
+              size="sm"
+              disabled={isLoading}
+              className={aspect === key ? "bg-gradient-to-r from-indigo-500 to-pink-500 hover:opacity-90" : ""}
+            >
+              {key} <span className="ml-1 text-xs opacity-70">{ASPECT_MAP[key].label}</span>
+            </Button>
+          ))}
+        </div>
+        
         <Textarea
           placeholder="Describe your imagination... (Press Enter to generate)"
           value={prompt}
