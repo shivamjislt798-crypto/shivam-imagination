@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Loader2, Sparkles, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import GlassCard from './GlassCard';
@@ -11,6 +11,35 @@ const ImageGenerator = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const handleDownload = async () => {
+    if (!generatedImage) return;
+    
+    try {
+      const response = await fetch(generatedImage);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `generated-image-${Date.now()}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: 'Download started',
+        description: 'Your image is being downloaded',
+        variant: 'success',
+      });
+    } catch (error) {
+      toast({
+        title: 'Download failed',
+        description: 'Failed to download image',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -108,12 +137,22 @@ const ImageGenerator = () => {
         />
 
         {generatedImage && (
-          <div className="relative rounded-xl overflow-hidden border border-border/50 shadow-glow-violet animate-float">
-            <img 
-              src={generatedImage} 
-              alt="Generated" 
-              className="w-full h-auto"
-            />
+          <div className="space-y-2">
+            <div className="relative rounded-xl overflow-hidden border border-border/50 shadow-glow-violet animate-float">
+              <img 
+                src={generatedImage} 
+                alt="Generated" 
+                className="w-full h-auto"
+              />
+            </div>
+            <Button
+              onClick={handleDownload}
+              variant="secondary"
+              className="w-full"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download Image
+            </Button>
           </div>
         )}
 

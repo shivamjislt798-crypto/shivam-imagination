@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Loader2, Video } from 'lucide-react';
+import { Loader2, Video, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import GlassCard from './GlassCard';
@@ -14,6 +14,35 @@ const VideoGenerator = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [generatedVideo, setGeneratedVideo] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const handleDownload = async () => {
+    if (!generatedVideo) return;
+    
+    try {
+      const response = await fetch(generatedVideo);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `generated-video-${Date.now()}.mp4`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: 'Download started',
+        description: 'Your video is being downloaded',
+        variant: 'success',
+      });
+    } catch (error) {
+      toast({
+        title: 'Download failed',
+        description: 'Failed to download video',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -125,12 +154,22 @@ const VideoGenerator = () => {
       </div>
 
       {generatedVideo && (
-        <div className="relative rounded-xl overflow-hidden border border-border/50 shadow-glow-blue animate-float">
-          <video 
-            src={generatedVideo} 
-            controls 
-            className="w-full h-auto"
-          />
+        <div className="space-y-2">
+          <div className="relative rounded-xl overflow-hidden border border-border/50 shadow-glow-blue animate-float">
+            <video 
+              src={generatedVideo} 
+              controls 
+              className="w-full h-auto"
+            />
+          </div>
+          <Button
+            onClick={handleDownload}
+            variant="secondary"
+            className="w-full"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download Video
+          </Button>
         </div>
       )}
 
