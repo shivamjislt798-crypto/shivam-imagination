@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,14 +13,29 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, duration, resolution } = await req.json();
+    const requestData = await req.json();
     
-    if (!prompt || typeof prompt !== 'string') {
+    // Validate input with Zod schema
+    const inputSchema = z.object({
+      prompt: z.string()
+        .trim()
+        .min(3, { message: 'Prompt must be at least 3 characters' })
+        .max(1000, { message: 'Prompt must be less than 1000 characters' }),
+      duration: z.string().optional(),
+      resolution: z.string().optional()
+    });
+
+    const validation = inputSchema.safeParse(requestData);
+    
+    if (!validation.success) {
+      console.warn('Invalid input:', validation.error.errors);
       return new Response(
-        JSON.stringify({ error: 'Invalid prompt provided' }),
+        JSON.stringify({ error: validation.error.errors[0].message }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const { prompt, duration, resolution } = validation.data;
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
