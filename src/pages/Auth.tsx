@@ -43,6 +43,7 @@ const Auth = () => {
         toast({
           title: "Welcome back!",
           description: "You've successfully logged in.",
+          variant: 'success',
         });
         navigate('/');
       } else {
@@ -59,6 +60,7 @@ const Auth = () => {
         toast({
           title: "Account created!",
           description: "You can now start creating amazing content.",
+          variant: 'success',
         });
         navigate('/');
       }

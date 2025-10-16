@@ -69,6 +69,7 @@ const ImageGenerator = () => {
         toast({
           title: 'Image generated!',
           description: 'Your imagination has been brought to life',
+          variant: 'success',
         });
       }
     } catch (error: any) {

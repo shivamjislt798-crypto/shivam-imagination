@@ -65,6 +65,7 @@ const OTPAuth = () => {
       toast({
         title: 'OTP sent!',
         description: 'Check your email for the verification code',
+        variant: 'success',
       });
     } catch (error: any) {
       toast({
@@ -102,6 +103,7 @@ const OTPAuth = () => {
       toast({
         title: 'Welcome!',
         description: 'Successfully verified',
+        variant: 'success',
       });
       navigate('/');
     } catch (error: any) {

@@ -36,6 +36,7 @@ const Layout = ({ children }: LayoutProps) => {
       toast({
         title: "Logged out",
         description: "You've been successfully logged out",
+        variant: 'success',
       });
       navigate('/auth');
     }

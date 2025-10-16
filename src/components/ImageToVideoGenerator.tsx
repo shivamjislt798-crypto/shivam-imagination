@@ -96,6 +96,7 @@ const ImageToVideoGenerator = () => {
           toast({
             title: 'Animation preview generated!',
             description: data.message || 'Your animation preview has been created',
+            variant: 'success',
           });
         }
         setIsLoading(false);

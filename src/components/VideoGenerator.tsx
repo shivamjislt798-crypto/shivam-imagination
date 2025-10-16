@@ -63,6 +63,7 @@ const VideoGenerator = () => {
         toast({
           title: 'Video preview generated!',
           description: data.message || 'Your video preview has been created',
+          variant: 'success',
         });
       }
     } catch (error: any) {
