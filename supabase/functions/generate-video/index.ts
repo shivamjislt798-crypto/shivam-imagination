@@ -22,8 +22,7 @@ serve(async (req) => {
         .min(3, { message: 'Prompt must be at least 3 characters' })
         .max(1000, { message: 'Prompt must be less than 1000 characters' }),
       duration: z.string().optional(),
-      resolution: z.string().optional(),
-      referenceImage: z.string().optional()
+      resolution: z.string().optional()
     });
 
     const validation = inputSchema.safeParse(requestData);
@@ -36,7 +35,7 @@ serve(async (req) => {
       );
     }
 
-    const { prompt, duration, resolution, referenceImage } = validation.data;
+    const { prompt, duration, resolution } = validation.data;
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -47,27 +46,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('Generating video with prompt:', prompt, 'duration:', duration, 'resolution:', resolution, 'hasReference:', !!referenceImage);
-
-    // Prepare content for API call
-    const messageContent: any[] = [
-      {
-        type: 'text',
-        text: referenceImage 
-          ? `Using this reference image as inspiration, create a cinematic key frame for this video concept: ${prompt}. Style: high quality, ${resolution}, cinematic composition. Maintain the visual style and mood from the reference.`
-          : `Create a cinematic key frame for this video concept: ${prompt}. Style: high quality, ${resolution}, cinematic composition.`
-      }
-    ];
-
-    // Add reference image if provided
-    if (referenceImage) {
-      messageContent.push({
-        type: 'image_url',
-        image_url: {
-          url: referenceImage
-        }
-      });
-    }
+    console.log('Generating video with prompt:', prompt, 'duration:', duration, 'resolution:', resolution);
 
     // Generate storyboard images using Gemini
     const storyboardResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -81,7 +60,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'user',
-            content: messageContent
+            content: `Create a cinematic key frame for this video concept: ${prompt}. Style: high quality, ${resolution}, cinematic composition.`
           }
         ],
         modalities: ["image", "text"]
