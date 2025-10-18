@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 
 const phrases = [
-  "It's Completely Copyright free — Enjoy!!!",
-  "Enjoy unlimited Generations....",
-  "Transform your idea into Reality",
+  "It's Completely Copyright free enjoy!!!",
+  "Enjoy unlimited Generations!!!",
+  "Transform your idea into Reality!!!",
 ];
 
 const TypingAnimation = () => {
