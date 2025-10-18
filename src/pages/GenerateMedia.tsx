@@ -1,7 +1,7 @@
 import Layout from '@/components/Layout';
 import ImageGenerator from '@/components/ImageGenerator';
 import VideoGenerator from '@/components/VideoGenerator';
-import ImageToVideoGenerator from '@/components/ImageToVideoGenerator';
+import ReferenceImageGenerator from '@/components/ReferenceImageGenerator';
 import { motion } from 'framer-motion';
 
 const GenerateMedia = () => {
@@ -57,7 +57,7 @@ const GenerateMedia = () => {
             <VideoGenerator />
           </motion.div>
           <motion.div variants={itemVariants}>
-            <ImageToVideoGenerator />
+            <ReferenceImageGenerator />
           </motion.div>
         </motion.div>
       </div>
